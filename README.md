@@ -9,7 +9,7 @@ Many settings can be changed at any time by editing the DeftHands.XML file.
 
 # Dependencies
 * [Fallout 4 Interface](https://github.com/Scrivener07/FO4_Interface/releases/tag/v1.0.0 "Version 1.0.0")
-* [XMLDocument](https://github.com/KernalsEgg/XMLDocument/releases/tag/v1.0.0 "Version 1.0.0")
+* [XMLDocument](https://github.com/KernalsEgg/XMLDocument/releases/tag/v1.0.1 "Version 1.0.1")
 
 # Contributors
 * [Scrivener07](https://github.com/Scrivener07)
