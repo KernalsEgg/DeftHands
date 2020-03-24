@@ -9,6 +9,9 @@ package
 	import Shared.GlobalFunc;
 	import Shared.IMenu;
 	
+	import flash.geom.Point;
+	import flash.geom.Rectangle;
+	
 	import Library.*;
 	
 	public class LockpickingMenu extends IMenu
@@ -19,10 +22,11 @@ package
 		
 		public var ButtonHintBar_mc:BSButtonHintBar;
 		
-		public var Center_mc:MovieClip;
 		public var DebugMenu_mc:MovieClip;
-		public var InheritColorsBarMenu_mc:MovieClip;
 		public var InheritColorsTicksMenu_mc:MovieClip;
+		public var InheritColorsBarMenu_mc:MovieClip;
+		public var TopCenter_mc:MovieClip;
+		public var Center_mc:MovieClip;
 		
 		public var LockLevel_tf:TextField;
 		public var PickCount_tf:TextField;
@@ -55,17 +59,17 @@ package
 		
 		private var bCheats:Boolean; // false = Ticks, true = Bar
 		private var bHasBeenOpened:Boolean;
+		private var bTicksMenu:Boolean;
+		private var fRadius:Number;
+		private var fLength:Number;
+		private var fAngle:Number;
+		private var fBuffer:Number;
+		private var fLockOffsetX:Number;
+		private var fLockOffsetY:Number;
+		private var fTickIndicatorOffset:Number;
 		private var bBarMenu:Boolean;
 		private var fBarOffset:Number;
 		private var fBarIndicatorOffset:Number;
-		private var bTicksMenu:Boolean;
-		private var fTickIndicatorOffset:Number;
-		private var fAngle:Number;
-		private var fBuffer:Number;
-		private var fRadius:Number;
-		private var fLength:Number;
-		private var fLockOffsetX:Number;
-		private var fLockOffsetY:Number;
 		
 		private var Ticks:Vector.<Tick>;
 		
@@ -96,8 +100,9 @@ package
 		// Event sent from the IMenu superclass once SafeX and SafeY have been set
 		override protected function onSetSafeRect() : void
 		{
-			// Position Center_mc
-			GlobalFunc.LockToSafeRect(Center_mc, "CC", SafeX, SafeY);
+			// Position anchors
+			GlobalFunc.LockToSafeRect(TopCenter_mc, "TC");
+			GlobalFunc.LockToSafeRect(Center_mc, "CC");
 		}
 		
 		// Event sent when the menu initializes
@@ -105,12 +110,14 @@ package
 		{
 			fMinPickAngle = afMinPickAngle + 270; // Convert min and max pick angles to unit circle
 			fMaxPickAngle = afMaxPickAngle + 270;
+			SetMinPickAngleText();
+			SetMaxPickAngleText();
 		}
 		
 		// Event sent when the menu initializes
 		public function InitLockpickingMenu() : void
 		{
-			SetSettings(); // Read settings from XML document
+			SetSettings(); // Read settings
 		}
 		
 		// Event sent when the menu initializes
@@ -123,7 +130,9 @@ package
 			SetSweetSpotWidthText();
 			SetPartialPickWidthText();
 			
-			TransformBar();
+			TransformTicksMenu();
+			TransformBarMenu();
+			
 			CreateTicks();
 			
 			// If the default menu has been opened automatically then open it
@@ -186,8 +195,8 @@ package
 			SetPickAngleText();
 			SetPickHealthText();
 			
-			TransformBarIndicator();
 			TransformTickIndicator();
+			TransformBarIndicator();
 		}
 		
 		// Event sent when the player rotates the pick
@@ -196,8 +205,8 @@ package
 			fPickAngle = -afPickAngle + 270; // Convert pick angle to unit circle
 			SetPickAngleText();
 			
-			TransformBarIndicator();
 			TransformTickIndicator();
+			TransformBarIndicator();
 		}
 		
 		// Event sent when the player rotates the lock
@@ -321,41 +330,108 @@ package
 		{
 			bCheats = Settings.cheats;
 			bHasBeenOpened = Settings.hasBeenOpened;
+			bTicksMenu = Settings.ticksMenu;
+			fRadius = Settings.radius;
+			fLength = Settings.length;
+			fAngle = Settings.angle;
+			fBuffer = Settings.buffer;
+			fLockOffsetX = Settings.lockOffsetX;
+			fLockOffsetY = Settings.lockOffsetY;
+			fTickIndicatorOffset = Settings.tickIndicatorOffset;
 			bBarMenu = Settings.barMenu;
 			fBarOffset = Settings.barOffset;
 			fBarIndicatorOffset = Settings.barIndicatorOffset;
-			bTicksMenu = Settings.ticksMenu;
-			fTickIndicatorOffset = Settings.tickIndicatorOffset;
-			fAngle = Settings.angle;
-			fBuffer = Settings.buffer;
-			fRadius = Settings.radius;
-			fLength = Settings.length;
-			fLockOffsetX = Settings.lockOffsetX;
-			fLockOffsetY = Settings.lockOffsetY;
 		}
 		
-		private function TransformBar() : void
+		private function TransformTicksMenu() : void
 		{
+			// \-----------/
+			// | Variables |
+			// /-----------\
+			
+			var globalPosition:Point;
+			var localPosition:Point;
+			
+			// \------------/
+			// | Operations |
+			// /------------\
+			
 			// Position
-			SweetSpotWidth_mc.x = PickAngleToX(fSweetSpot - (fSweetSpotWidth / 2), Mask_mc.x, Mask_mc.width);
-			LeftPartialPickWidth_mc.x = PickAngleToX(fSweetSpot - (fSweetSpotWidth / 2) - fPartialPickWidth, Mask_mc.x, Mask_mc.width);
-			RightPartialPickWidth_mc.x = PickAngleToX(fSweetSpot + (fSweetSpotWidth / 2) + fPartialPickWidth, Mask_mc.x, Mask_mc.width);
+			globalPosition = Center_mc.parent.localToGlobal(new Point(Center_mc.x + fLockOffsetX, Center_mc.y + fLockOffsetY));
 			
-			BarMenu_mc.y = fBarOffset;
-			InheritColorsBarMenu_mc.y = fBarOffset;
+			localPosition = TicksMenu_mc.parent.globalToLocal(globalPosition);
+			TicksMenu_mc.x = localPosition.x;
+			TicksMenu_mc.y = localPosition.y;
 			
-			// Scale
-			SweetSpotWidth_mc.width = PickAngleToX(fSweetSpot + (fSweetSpotWidth / 2), Mask_mc.x, Mask_mc.width) - SweetSpotWidth_mc.x;
-			LeftPartialPickWidth_mc.width = PickAngleToX(fSweetSpot - (fSweetSpotWidth / 2), Mask_mc.x, Mask_mc.width) - LeftPartialPickWidth_mc.x;
-			RightPartialPickWidth_mc.width = RightPartialPickWidth_mc.x - PickAngleToX(fSweetSpot + (fSweetSpotWidth / 2), Mask_mc.x, Mask_mc.width);
+			localPosition = InheritColorsTicksMenu_mc.parent.globalToLocal(globalPosition);
+			InheritColorsTicksMenu_mc.x = localPosition.x;
+			InheritColorsTicksMenu_mc.y = localPosition.y;
+		}
+		
+		private function TransformBarMenu() : void
+		{
+			// \-----------/
+			// | Variables |
+			// /-----------\
+			
+			var globalPosition:Point;
+			var localPosition:Point;
+			
+			// \------------/
+			// | Operations |
+			// /------------\
+			
+			// Position
+			globalPosition = TopCenter_mc.parent.localToGlobal(new Point(TopCenter_mc.x, TopCenter_mc.y + fBarOffset));
+			
+			localPosition = BarMenu_mc.parent.globalToLocal(globalPosition);
+			BarMenu_mc.x = localPosition.x;
+			BarMenu_mc.y = localPosition.y;
+			
+			localPosition = InheritColorsBarMenu_mc.parent.globalToLocal(globalPosition);
+			InheritColorsBarMenu_mc.x = localPosition.x;
+			InheritColorsBarMenu_mc.y = localPosition.y;
+			
+			// Transform
+			TransformSweetSpot(SweetSpotWidth_mc, fSweetSpot - (fSweetSpotWidth / 2), fSweetSpot + (fSweetSpotWidth / 2));
+			TransformSweetSpot(LeftPartialPickWidth_mc, fSweetSpot - (fSweetSpotWidth / 2) - fPartialPickWidth, fSweetSpot - (fSweetSpotWidth / 2));
+			TransformSweetSpot(RightPartialPickWidth_mc, fSweetSpot + (fSweetSpotWidth / 2), fSweetSpot + (fSweetSpotWidth / 2) + fPartialPickWidth);
 			
 			// Mask
 			SweetSpot_mc.mask = Mask_mc;
 		}
 		
-		private function PickAngleToX(afPickAngle:Number, afMinX:Number, afRangeX:Number) : Number
+		private function TransformSweetSpot(Bar_mc:MovieClip, afMinAngle:Number, afMaxAngle:Number) : void
 		{
-			return afMinX + afRangeX * ((afPickAngle - fMinPickAngle) / (fMaxPickAngle - fMinPickAngle));
+			// \-----------/
+			// | Variables |
+			// /-----------\
+			
+			var maxX:Number;
+			var minX:Number;
+			
+			var bounds:Rectangle;
+			
+			// \------------/
+			// | Operations |
+			// /------------\
+			
+			bounds = Mask_mc.getRect(Bar_mc.parent);
+			minX = bounds.left;
+			maxX = bounds.right;
+			
+			// Position
+			Bar_mc.x = PickAngleToX(afMinAngle, minX, maxX);
+			Bar_mc.y = bounds.top;
+			
+			// Scale
+			Bar_mc.width = PickAngleToX(afMaxAngle, minX, maxX) - Bar_mc.x;
+			Bar_mc.height = bounds.height;
+		}
+		
+		private function PickAngleToX(afPickAngle:Number, afMinX:Number, afMaxX:Number) : Number
+		{
+			return afMinX + (afMaxX - afMinX) * ((afPickAngle - fMinPickAngle) / (fMaxPickAngle - fMinPickAngle));
 		}
 		
 		private function CreateTicks() : void
@@ -395,7 +471,7 @@ package
 				bufferFrom = Math.min(fBuffer / 2, fMaxPickAngle - tickAngle);
 				bufferTo = Math.min(fBuffer / 2, Math.max(fMaxPickAngle - (tickAngle + fAngle - (fBuffer / 2)), 0));
 				
-				Ticks.push(new Tick(lockCenterX, lockCenterY, angleFrom, angleTo, bufferFrom, bufferTo, fRadius, fLength));
+				Ticks.push(new Tick(fRadius, fLength, angleFrom, angleTo, bufferFrom, bufferTo));
 			}
 			
 			// Hide each tick and add it to the TicksMenu_mc container
@@ -410,13 +486,13 @@ package
 		{
 			bHasBeenOpened = true;
 			
-			// Bar
-			BarMenu_mc.visible = bBarMenu ? bCheats : false; // If the Bar menu is active and cheats are enabled
-			InheritColorsBarMenu_mc.visible = bBarMenu ? bCheats : false;
-			
 			// Ticks
 			TicksMenu_mc.visible = bTicksMenu ? !bCheats : false; // If the Ticks menu is active and cheats are disabled
 			InheritColorsTicksMenu_mc.visible = bTicksMenu ? !bCheats : false;
+			
+			// Bar
+			BarMenu_mc.visible = bBarMenu ? bCheats : false; // If the Bar menu is active and cheats are enabled
+			InheritColorsBarMenu_mc.visible = bBarMenu ? bCheats : false;
 		}
 		
 		public function SetToggleActiveButtonVisible() : void
@@ -424,13 +500,6 @@ package
 			// If the current menu is active but has not been opened
 			// If the other menu is active
 			ToggleActiveButton.ButtonVisible = ((bCheats ? bBarMenu : bTicksMenu) && !bHasBeenOpened) || (!bCheats ? bBarMenu : bTicksMenu);
-		}
-		
-		private function TransformBarIndicator() : void
-		{
-			// Position
-			BarIndicator_mc.x = PickAngleToX(fPickAngle, ShadedBackground_mc.x, ShadedBackground_mc.width);
-			BarIndicator_mc.y = -fBarIndicatorOffset;
 		}
 		
 		private function TransformTickIndicator() : void
@@ -448,29 +517,63 @@ package
 			thetaPickAngle = MathEx.DegreesToRadians(fPickAngle);
 			
 			// Position
-			TickIndicator_mc.x = lockCenterX + (fRadius - fTickIndicatorOffset) * Math.cos(thetaPickAngle);
-			TickIndicator_mc.y = lockCenterY + (fRadius - fTickIndicatorOffset) * Math.sin(thetaPickAngle);
+			TickIndicator_mc.x = (fRadius - fTickIndicatorOffset) * Math.cos(thetaPickAngle);
+			TickIndicator_mc.y = (fRadius - fTickIndicatorOffset) * Math.sin(thetaPickAngle);
 			
 			// Rotate
 			TickIndicator_mc.rotation = fPickAngle + 90;
 		}
 		
+		private function TransformBarIndicator() : void
+		{
+			// \-----------/
+			// | Variables |
+			// /-----------\
+			
+			var maxX:Number;
+			var minX:Number;
+			
+			var bounds:Rectangle;
+			
+			// \------------/
+			// | Operations |
+			// /------------\
+			
+			bounds = Mask_mc.getRect(BarIndicator_mc.parent);
+			minX = bounds.left;
+			maxX = bounds.right;
+			
+			// Position
+			BarIndicator_mc.x = PickAngleToX(fPickAngle, minX, maxX);
+			BarIndicator_mc.y = bounds.top - fBarIndicatorOffset;
+		}
+		
 		
 		
 		// Set text
+		private function SetMinPickAngleText() : void
+		{
+			GlobalFunc.SetText(MinPickAngle_tf, "MIN PICK ANGLE: " + Math.floor(fMinPickAngle) + "°", false);
+		}
+		
+		private function SetMaxPickAngleText() : void
+		{
+			GlobalFunc.SetText(MaxPickAngle_tf, "MAX PICK ANGLE: " + Math.floor(fMaxPickAngle) + "°", false);
+		}
+		
 		private function SetSweetSpotText() : void
 		{
-			GlobalFunc.SetText(DebugMenu_mc.SweetSpot_tf, "SWEET SPOT: " + fSweetSpot.toFixed(1) + "°", false);
+			GlobalFunc.SetText(SweetSpot_tf, "SWEET SPOT: " + fSweetSpot.toFixed(1) + "°", false);
 		}
 		
 		private function SetSweetSpotWidthText() : void
 		{
-			GlobalFunc.SetText(DebugMenu_mc.SweetSpotWidth_tf, "SWEET SPOT WIDTH: " + fSweetSpotWidth.toFixed(1) + "°", false);
+			GlobalFunc.SetText(SweetSpotWidth_tf, "SWEET SPOT WIDTH: " + fSweetSpotWidth.toFixed(1) + "°", false);
 		}
 		
 		private function SetPartialPickWidthText() : void
 		{
-			GlobalFunc.SetText(DebugMenu_mc.PartialPickWidth_tf, "PARTIAL PICK WIDTH: " + fPartialPickWidth.toFixed(1) + "°", false);
+			GlobalFunc.SetText(PartialPickWidth_tf, "PARTIAL PICK WIDTH: " + fPartialPickWidth.toFixed(1) + "°", false);
 		}
 		
 		private function SetLockLevelText() : void
@@ -495,17 +598,17 @@ package
 		
 		private function SetPickAngleText() : void
 		{
-			GlobalFunc.SetText(DebugMenu_mc.PickAngle_tf, "PICK ANGLE: " + Math.floor(fPickAngle) + "°", false);
+			GlobalFunc.SetText(PickAngle_tf, "PICK ANGLE: " + Math.floor(fPickAngle) + "°", false);
 		}
 		
 		private function SetLockAngleText() : void
 		{
-			GlobalFunc.SetText(DebugMenu_mc.LockAngle_tf, "LOCK ANGLE: " + Math.floor(fLockAngle) + "°", false);
+			GlobalFunc.SetText(LockAngle_tf, "LOCK ANGLE: " + Math.floor(fLockAngle) + "°", false);
 		}
 		
 		private function SetPickHealthText() : void
 		{
-			GlobalFunc.SetText(DebugMenu_mc.PickHealth_tf, "PICK HEALTH: " + Math.floor(fPickHealth) + "%", false);
+			GlobalFunc.SetText(PickHealth_tf, "PICK HEALTH: " + Math.floor(fPickHealth) + "%", false);
 		}
 		
 		
@@ -567,6 +670,18 @@ package
 		
 		
 		
+		// TicksMenu_mc
+		public function get TicksMenu_mc() : MovieClip
+		{
+			return (stage.getChildAt(0) as MovieClip).TicksMenu_mc;
+		}
+		
+		// InheritColorsTicksMenu_mc
+		public function get TickIndicator_mc() : MovieClip
+		{
+			return InheritColorsTicksMenu_mc.PickIndicator_mc;
+		}
+		
 		// BarMenu_mc
 		public function get BarMenu_mc() : MovieClip
 		{
@@ -604,38 +719,45 @@ package
 			return InheritColorsBarMenu_mc.PickIndicator_mc;
 		}
 		
-		public function get Brackets_mc() : MovieClip
+		// DebugMenu_mc
+		public function get MinPickAngle_tf() : TextField
 		{
-			return InheritColorsBarMenu_mc.Brackets_mc;
+			return DebugMenu_mc.MinPickAngle_tf;
 		}
 		
-		public function get ShadedBackground_mc() : MovieClip
+		public function get MaxPickAngle_tf() : TextField
 		{
-			return Brackets_mc.ShadedBackground_mc;
+			return DebugMenu_mc.MaxPickAngle_tf;
 		}
 		
-		// TicksMenu_mc
-		public function get TicksMenu_mc() : MovieClip
+		public function get SweetSpot_tf() : TextField
 		{
-			return (stage.getChildAt(0) as MovieClip).TicksMenu_mc;
+			return DebugMenu_mc.SweetSpot_tf;
 		}
 		
-		// InheritColorsTicksMenu_mc
-		public function get TickIndicator_mc() : MovieClip
+		public function get SweetSpotWidth_tf() : TextField
 		{
-			return InheritColorsTicksMenu_mc.PickIndicator_mc;
+			return DebugMenu_mc.SweetSpotWidth_tf;
 		}
 		
-		
-		
-		public function get lockCenterX() : Number
+		public function get PartialPickWidth_tf() : TextField
 		{
-			return Center_mc.x + fLockOffsetX;
+			return DebugMenu_mc.PartialPickWidth_tf;
 		}
 		
-		public function get lockCenterY() : Number
+		public function get PickAngle_tf() : TextField
 		{
-			return Center_mc.y + fLockOffsetY;
+			return DebugMenu_mc.PickAngle_tf;
+		}
+		
+		public function get LockAngle_tf() : TextField
+		{
+			return DebugMenu_mc.LockAngle_tf;
+		}
+		
+		public function get PickHealth_tf() : TextField
+		{
+			return DebugMenu_mc.PickHealth_tf;
 		}
 	}
 }

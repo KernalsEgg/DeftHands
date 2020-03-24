@@ -2,7 +2,7 @@
 {
 	import flash.display.MovieClip;
 	
-	import Library.*;
+	import Library.MathEx;
 	
 	public class Tick extends MovieClip
 	{
@@ -11,14 +11,12 @@
 		// /====================\
 		
 		// User settings
-		private var fCenterX:Number;
-		private var fCenterY:Number;
+		private var fRadius:Number;
+		private var fLength:Number;
 		private var fAngleFrom:Number;
 		private var fAngleTo:Number;
 		private var fBufferFrom:Number;
 		private var fBufferTo:Number;
-		private var fRadius:Number;
-		private var fLength:Number;
 		
 		// Greatest lock angle
 		private var fLockAngle:Number = 0;
@@ -29,18 +27,16 @@
 		// | Constructor |
 		// /=============\
 		
-		public function Tick(afCenterX:Number, afCenterY:Number, afAngleFrom:Number, afAngleTo:Number, afBufferFrom:Number, afBufferTo:Number, afRadius:Number, afLength:Number)
+		public function Tick(afRadius:Number, afLength:Number, afAngleFrom:Number, afAngleTo:Number, afBufferFrom:Number = 0, afBufferTo:Number = 0)
 		{
 			stop(); // Stop shape tween
 			
-			fCenterX = afCenterX;
-			fCenterY = afCenterY;
+			fRadius = afRadius;
+			fLength = afLength;
 			fAngleFrom = afAngleFrom;
 			fAngleTo = afAngleTo;
 			fBufferFrom = afBufferFrom;
 			fBufferTo = afBufferTo;
-			fRadius = afRadius;
-			fLength = afLength;
 			
 			TransformTick();
 		}
@@ -72,8 +68,8 @@
 			thetaBufferTo = MathEx.DegreesToRadians(fBufferTo);
 			
 			// Position
-			x = fCenterX + fRadius * Math.cos(thetaAngleFrom + thetaBufferFrom); // Math.cos returns the x position in a unit circle for a given angle
-			y = fCenterY + fRadius * Math.sin(thetaAngleFrom + thetaBufferFrom); // Math.sin returns the y position in a unit circle for a given angle
+			x = fRadius * Math.cos(thetaAngleFrom + thetaBufferFrom); // Math.cos returns the x position in a unit circle for a given angle
+			y = fRadius * Math.sin(thetaAngleFrom + thetaBufferFrom); // Math.sin returns the y position in a unit circle for a given angle
 			
 			// Rotate
 			rotation = MathEx.RadiansToDegrees(Math.atan2(fRadius * (Math.sin(thetaAngleTo - thetaBufferTo) - Math.sin(thetaAngleFrom + thetaBufferFrom)), fRadius * (Math.cos(thetaAngleTo - thetaBufferTo) - Math.cos(thetaAngleFrom + thetaBufferFrom)))); // Math.atan2 returns the angle between (0, 0) and (y, x)
@@ -90,14 +86,14 @@
 		// /=========\
 		
 		// User settings
-		public function get centerX() : Number
+		public function get radius() : Number
 		{
-			return fCenterX;
+			return fRadius;
 		}
 		
-		public function get centerY() : Number
+		public function get length() : Number
 		{
-			return fCenterY;
+			return fLength;
 		}
 		
 		public function get angleFrom() : Number
@@ -118,16 +114,6 @@
 		public function get bufferTo() : Number
 		{
 			return fBufferTo;
-		}
-		
-		public function get radius() : Number
-		{
-			return fRadius;
-		}
-		
-		public function get length() : Number
-		{
-			return fLength;
 		}
 		
 		
